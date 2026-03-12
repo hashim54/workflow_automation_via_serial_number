@@ -81,7 +81,7 @@ The following services must be provisioned and the app's managed identity assign
 
 | Role | Scope |
 |---|---|
-| `Storage Blob Data Contributor` | Storage account or container |
+| `Storage Blob Data Contributor` | Storage account |
 
 > Use `BLOBSTORAGE_ACCOUNT_URL` (managed identity) in production. `BLOBSTORAGE_CONNECTION_STRING` is available for local dev only.
 
@@ -98,22 +98,71 @@ Two hosted agents are required:
 
 | Role | Scope |
 |---|---|
-| `Azure AI Developer` | Microsoft Foundry project |
+| `Azure AI Developer` | AI Services account |
 
 Set `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_IMAGE_PROCESSING_AGENT_ID`, and `FOUNDRY_REASONING_AGENT_ID` in `.env`.
 
 ### Azure App Configuration _(optional)_
 
-Centralises all settings under a key filter (e.g. `workflow-automation:*`). The managed identity needs:
+Centralizes all settings under a key filter (e.g. `workflow-automation:*`). Supports Key Vault references — secrets stored in Key Vault are resolved transparently at startup via `DefaultAzureCredential`.
+
+**RBAC role required:**
 
 | Role | Scope |
 |---|---|
 | `App Configuration Data Reader` | App Configuration store |
 
+### Azure Key Vault _(optional)_
+
+Used to store secrets referenced from Azure App Configuration. The `azure-appconfiguration-provider` SDK resolves Key Vault reference values automatically at startup — no additional SDK calls are required.
+
+**Requirements:**
+- Key Vault must have **RBAC authorization enabled** (`enableRbacAuthorization: true`). Vault access policies are not supported.
+
+**RBAC role required:**
+
+| Role | Scope |
+|---|---|
+| `Key Vault Secrets User` | Key Vault |
+
 ### Azure Application Insights _(optional)_
 
 Set `APPINSIGHTS_CONNECTION_STRING` to enable distributed tracing via OpenTelemetry. No RBAC required — the connection string contains the ingestion key.
 
+## Local Development Setup
+
+Run the interactive setup script to log in to your Entra ID tenant, select a subscription, and assign all required RBAC roles to your local Azure CLI account:
+
+```bash
+python scripts/setup_local_dev_rbac.py
+```
+
+The script prompts for each resource name and skips services you leave blank. You can also supply everything non-interactively:
+
+```bash
+python scripts/setup_local_dev_rbac.py \
+  --tenant-id            <tenant-id> \
+  --subscription         <subscription-id> \
+  --resource-group       <resource-group> \
+  --cosmos-account       <cosmos-account-name> \
+  --storage-account      <storage-account-name> \
+  --ai-services-account  <ai-services-account-name> \
+  --app-config-store     <appconfig-store-name> \
+  --key-vault            <key-vault-name>
+```
+
+After the script completes it prints the endpoint values to copy into `backend/.env`.
+
+> Role propagation can take up to 5 minutes after assignment.
+
+### Next steps after running the script
+
+1. Copy `backend/.env.example` → `backend/.env`
+2. Fill in the endpoint values printed by the script
+3. Set `FOUNDRY_IMAGE_PROCESSING_AGENT_ID` and `FOUNDRY_REASONING_AGENT_ID`
+4. Store secrets in Key Vault and add Key Vault references in App Configuration
+5. Run: `cd backend && uvicorn app.api.main:app --reload`
+
 ## Configuration
 
-All settings are driven by environment variables. See `.env.example` for the full reference. Azure App Configuration is supported for centralized config management.
+All settings are driven by environment variables. See `.env.example` for the full reference. Azure App Configuration is supported for centralized config management — when `APP_CONFIG_ENDPOINT` is set, all other settings can be stored there, with secrets stored in Key Vault and referenced via Key Vault references.
