@@ -1,0 +1,87 @@
+###############################################################################
+# Workflow Automation via Serial Number - API Tests
+#
+# API routes:
+#   Health
+#     GET  /health
+#   
+#   Config
+#     GET  /config/config-status  - Check configuration status
+#
+#   Workflows
+#     POST /api/v1/workflows                  - Execute workflow for a serial number
+#     GET  /api/v1/workflows/{serial_number}  - Get workflow status
+###############################################################################
+
+@baseUrl      = http://localhost:8000
+@serialNumber = SN-12345-TEST
+
+###############################################################################
+# HEALTH
+###############################################################################
+
+### Health Check
+# @name healthCheck
+GET {{baseUrl}}/health
+Accept: application/json
+
+###############################################################################
+# CONFIGURATION STATUS
+###############################################################################
+
+### Get Configuration Status
+# @name configStatus
+GET {{baseUrl}}/config/config-status
+Accept: application/json
+
+###############################################################################
+# WORKFLOWS — POST /api/v1/workflows
+###############################################################################
+
+### Execute Workflow - Basic (serial number only)
+# @name executeWorkflowBasic
+POST {{baseUrl}}/api/v1/workflows
+Content-Type: application/json
+
+{
+  "serial_number": "{{serialNumber}}"
+}
+
+### Execute Workflow - With data payload
+# @name executeWorkflowWithData
+POST {{baseUrl}}/api/v1/workflows
+Content-Type: application/json
+
+{
+  "serial_number": "{{serialNumber}}",
+  "data": {
+    "image_url": "https://example.com/images/serial-tag.jpg",
+    "metadata": {
+      "source": "mobile_app",
+      "timestamp": "2026-03-11T10:30:00Z"
+    }
+  }
+}
+
+### Execute Workflow - Missing serial_number (expects 422)
+POST {{baseUrl}}/api/v1/workflows
+Content-Type: application/json
+
+{
+  "data": {
+    "note": "Missing serial number"
+  }
+}
+
+###############################################################################
+# WORKFLOWS — GET /api/v1/workflows/{serial_number}
+###############################################################################
+
+### Get Workflow Status
+# @name getWorkflowStatus
+GET {{baseUrl}}/api/v1/workflows/{{serialNumber}}
+Accept: application/json
+
+### Get Workflow Status - Non-existent serial number
+GET {{baseUrl}}/api/v1/workflows/SN-NOTFOUND-0000
+Accept: application/json
