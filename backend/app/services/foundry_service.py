@@ -9,13 +9,17 @@ from app.core.settings import Settings
 from azure.ai.agents.aio import AgentsClient
 from azure.ai.agents.models import (
     AgentThreadCreationOptions,
+    MessageDeltaChunk,
+    MessageDeltaTextContent,
     MessageImageUrlParam,
     MessageInputImageUrlBlock,
+    MessageInputTextBlock,
     MessageRole,
+    MessageTextContent,
     ThreadMessageOptions,
+    ThreadRun,
 )
 from azure.identity.aio import DefaultAzureCredential
-
 from prompts.templates import ImageAnalysisPrompts
 
 logger = logging.getLogger(__name__)
@@ -55,6 +59,7 @@ class FoundryService:
 
             self._credential = DefaultAzureCredential()
             self._client = AgentsClient(endpoint=endpoint, credential=self._credential)
+        assert self._client is not None
         return self._client
 
     async def close(self) -> None:
@@ -96,7 +101,7 @@ class FoundryService:
                 ThreadMessageOptions(
                     role=MessageRole.USER,
                     content=[
-                        {"type": "text", "text": user_prompt},
+                        MessageInputTextBlock(text=user_prompt),
                         MessageInputImageUrlBlock(
                             image_url=MessageImageUrlParam(url=data_url, detail="high"),
                         ),
@@ -131,7 +136,7 @@ class FoundryService:
                 # Fallback: iterate content blocks directly
                 if msg.content:
                     for block in msg.content:
-                        if hasattr(block, "text") and block.text:
+                        if isinstance(block, MessageTextContent) and block.text:
                             raw_text = block.text.value
                             try:
                                 return json.loads(raw_text)
@@ -177,9 +182,7 @@ class FoundryService:
                     role=message.get("role", "user"),
                     content=message.get("content", ""),
                 )
-            run = await client.runs.create_and_process(
-                thread_id=thread_id, agent_id=agent_id
-            )
+            run = await client.runs.create_and_process(thread_id=thread_id, agent_id=agent_id)
         else:
             # Create thread with messages and run in one call
             thread_options = AgentThreadCreationOptions(
@@ -191,14 +194,10 @@ class FoundryService:
                     for message in messages
                 ]
             )
-            run = await client.create_thread_and_process_run(
-                agent_id=agent_id, thread=thread_options
-            )
+            run = await client.create_thread_and_process_run(agent_id=agent_id, thread=thread_options)
 
         # Get latest assistant message
-        last_msg = await client.messages.get_last_message_text_by_role(
-            thread_id=run.thread_id, role=MessageRole.AGENT
-        )
+        last_msg = await client.messages.get_last_message_text_by_role(thread_id=run.thread_id, role=MessageRole.AGENT)
 
         return {
             "thread_id": run.thread_id,
@@ -248,20 +247,18 @@ class FoundryService:
             )
 
         # Create streaming run
-        async with await client.runs.stream(
-            thread_id=tid, agent_id=agent_id
-        ) as event_handler:
+        async with await client.runs.stream(thread_id=tid, agent_id=agent_id) as event_handler:
             async for event_type, event_data, _ in event_handler:
-                if hasattr(event_data, "delta") and event_data.delta:
+                if isinstance(event_data, MessageDeltaChunk) and event_data.delta:
                     if event_data.delta.content:
                         for block in event_data.delta.content:
-                            if hasattr(block, "text") and block.text:
+                            if isinstance(block, MessageDeltaTextContent) and block.text:
                                 yield {
                                     "type": "content",
                                     "delta": block.text.value,
                                     "thread_id": tid,
                                 }
-                elif hasattr(event_data, "status") and event_data.status == "completed":
+                elif isinstance(event_data, ThreadRun) and event_data.status == "completed":
                     yield {
                         "type": "done",
                         "thread_id": tid,
