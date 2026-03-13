@@ -87,13 +87,7 @@ class FoundryOptions(BaseModel):
         ..., min_length=1, description="Agent ID for reasoning and analysis (generates recommendations)"
     )
     image_processing_model: str = Field(
-        default="gpt-5.2", description="Model override for image processing agent"
-    )
-    image_processing_temperature: float = Field(
-        default=0.1, ge=0.0, le=2.0, description="Temperature for image processing agent (lower = more deterministic)"
-    )
-    image_processing_max_tokens: int = Field(
-        default=2048, gt=0, description="Maximum tokens for image processing agent responses"
+        ..., min_length=1, description="Model deployment name for image processing agent"
     )
     reasoning_temperature: float = Field(
         default=0.3, ge=0.0, le=2.0, description="Temperature for reasoning agent (higher = more creative analysis)"

@@ -77,9 +77,7 @@ class MicrosoftFoundrySettings(AppConfigAwareSettings):
         default="", description="Image processing agent ID (extracts serial numbers)"
     )
     reasoning_agent_id: str = Field(default="", description="Reasoning agent ID (generates recommendations)")
-    image_processing_model: str = Field(default="gpt-5.2", description="Model override for image processing agent")
-    image_processing_temperature: float = Field(default=0.1, description="Temperature for image processing agent")
-    image_processing_max_tokens: int = Field(default=2048, description="Max tokens for image processing agent")
+    image_processing_model: str = Field(default="", description="Model deployment name for image processing agent (required)")
     reasoning_temperature: float = Field(default=0.3, description="Temperature for reasoning agent")
     reasoning_max_tokens: int = Field(default=4096, description="Max tokens for reasoning agent")
 
@@ -210,8 +208,6 @@ class Settings(AppConfigAwareSettings):
             reasoning_agent_id=self.microsoft_foundry.reasoning_agent_id,
             image_processing_agent_id=self.microsoft_foundry.image_processing_agent_id,
             image_processing_model=self.microsoft_foundry.image_processing_model,
-            image_processing_temperature=self.microsoft_foundry.image_processing_temperature,
-            image_processing_max_tokens=self.microsoft_foundry.image_processing_max_tokens,
             reasoning_temperature=self.microsoft_foundry.reasoning_temperature,
             reasoning_max_tokens=self.microsoft_foundry.reasoning_max_tokens,
         )

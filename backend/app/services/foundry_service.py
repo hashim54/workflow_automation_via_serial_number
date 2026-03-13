@@ -112,8 +112,6 @@ class FoundryService:
             thread=thread_options,
             model=foundry.image_processing_model,
             instructions=ImageAnalysisPrompts.SERIAL_NUMBER_EXTRACTION_SYSTEM_PROMPT,
-            temperature=foundry.image_processing_temperature,
-            max_completion_tokens=foundry.image_processing_max_tokens,
         )
 
         if run.status != "completed":
