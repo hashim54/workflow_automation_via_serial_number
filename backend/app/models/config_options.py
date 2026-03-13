@@ -133,10 +133,12 @@ class MCPClientOptions(BaseModel):
     (FSG, Phoenix) via Azure API Management.
     """
 
-    fsg_endpoint: str = Field(
-        ..., min_length=1, description="FSG (Field Service Gateway) MCP endpoint URL via Azure APIM"
+    fsg_endpoint: Optional[str] = Field(
+        default=None, description="FSG (Field Service Gateway) MCP endpoint URL via Azure APIM"
     )
-    phoenix_endpoint: str = Field(..., min_length=1, description="Phoenix MCP endpoint URL via Azure APIM")
+    phoenix_endpoint: Optional[str] = Field(
+        default=None, description="Phoenix MCP endpoint URL via Azure APIM"
+    )
     timeout_seconds: int = Field(
         default=30, ge=1, le=300, description="HTTP timeout for MCP client requests in seconds"
     )
@@ -144,11 +146,11 @@ class MCPClientOptions(BaseModel):
 
     @field_validator("fsg_endpoint", "phoenix_endpoint")
     @classmethod
-    def validate_endpoint_url(cls, v: str) -> str:
-        """Validate MCP endpoint URL format."""
-        if not v.startswith("https://"):
+    def validate_endpoint_url(cls, v: Optional[str]) -> Optional[str]:
+        """Validate MCP endpoint URL format if provided."""
+        if v and not v.startswith("https://"):
             raise ValueError("MCP endpoint must start with https://")
-        return v
+        return v or None
 
     model_config = {
         "str_strip_whitespace": True,

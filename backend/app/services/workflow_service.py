@@ -71,8 +71,8 @@ class WorkflowService:
         
         # For now, return a placeholder response
         return WorkflowResponse(
-            serial_number=request.serial_number,
             status="not_implemented",
+            image_url=request.image_url,
             result={
                 "message": "Workflow execution not yet implemented",
                 "configuration_valid": True,
@@ -108,7 +108,6 @@ class WorkflowService:
         
         # For now, return a placeholder response
         return WorkflowResponse(
-            serial_number=serial_number,
             status="not_found",
             result={
                 "message": "Status lookup not yet implemented",

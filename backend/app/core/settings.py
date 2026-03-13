@@ -227,8 +227,8 @@ class Settings(AppConfigAwareSettings):
     def mcp_client_options(self) -> MCPClientOptions:
         """Create MCPClientOptions from nested settings."""
         return MCPClientOptions(
-            fsg_endpoint=self.mcp_client.fsg_endpoint,
-            phoenix_endpoint=self.mcp_client.phoenix_endpoint,
+            fsg_endpoint=self.mcp_client.fsg_endpoint or None,
+            phoenix_endpoint=self.mcp_client.phoenix_endpoint or None,
             timeout_seconds=self.mcp_client.timeout_seconds,
             max_retries=self.mcp_client.max_retries,
         )

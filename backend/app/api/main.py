@@ -170,9 +170,9 @@ async def lifespan(app: FastAPI):
         logger.info(
             f"  Application Insights: {'Configured' if settings.app_insights_options.connection_string else 'Not configured'}"
         )
-        logger.info(f"  MCP FSG: {'Configured' if settings.mcp_client_options.fsg_endpoint else 'Not configured'}")
+        logger.info(f"  MCP FSG: {'Configured' if settings.mcp_client.fsg_endpoint else 'Not configured'}")
         logger.info(
-            f"  MCP Phoenix: {'Configured' if settings.mcp_client_options.phoenix_endpoint else 'Not configured'}"
+            f"  MCP Phoenix: {'Configured' if settings.mcp_client.phoenix_endpoint else 'Not configured'}"
         )
 
         # Provision Cosmos DB resources if they don't exist
