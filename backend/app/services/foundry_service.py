@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 from typing import Any, AsyncIterator, Optional
 
 from app.core.settings import Settings
@@ -16,6 +17,8 @@ from azure.ai.agents.models import (
 from azure.identity.aio import DefaultAzureCredential
 
 from prompts.templates import ImageAnalysisPrompts
+
+logger = logging.getLogger(__name__)
 
 
 class FoundryService:
@@ -103,24 +106,40 @@ class FoundryService:
         )
 
         # Create thread, run agent, and poll until completion
+        foundry = self._settings.microsoft_foundry
         run = await client.create_thread_and_process_run(
             agent_id=agent_id,
             thread=thread_options,
+            model=foundry.image_processing_model,
+            instructions=ImageAnalysisPrompts.SERIAL_NUMBER_EXTRACTION_SYSTEM_PROMPT,
+            temperature=foundry.image_processing_temperature,
+            max_completion_tokens=foundry.image_processing_max_tokens,
         )
 
         if run.status != "completed":
             return {"error": f"Agent run finished with status: {run.status}"}
 
         # Retrieve the assistant's last text response
-        last_msg = await client.messages.get_last_message_text_by_role(
-            thread_id=run.thread_id, role=MessageRole.AGENT
-        )
-        if last_msg:
-            raw_text = last_msg.text.value
-            try:
-                return json.loads(raw_text)
-            except json.JSONDecodeError:
-                return {"raw_response": raw_text}
+        messages = client.messages.list(thread_id=run.thread_id)
+        async for msg in messages:
+            if msg.role == MessageRole.AGENT:
+                # Try text_messages helper first
+                if msg.text_messages:
+                    raw_text = msg.text_messages[-1].text.value
+                    try:
+                        return json.loads(raw_text)
+                    except json.JSONDecodeError:
+                        return {"raw_response": raw_text}
+                # Fallback: iterate content blocks directly
+                if msg.content:
+                    for block in msg.content:
+                        if hasattr(block, "text") and block.text:
+                            raw_text = block.text.value
+                            try:
+                                return json.loads(raw_text)
+                            except json.JSONDecodeError:
+                                return {"raw_response": raw_text}
+                break
 
         return {"error": "No assistant response received"}
 
