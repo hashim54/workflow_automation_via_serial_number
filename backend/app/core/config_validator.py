@@ -142,27 +142,28 @@ class ConfigValidator:
         return True
 
     def validate_mcp_clients(self) -> bool:
-        """Validate MCP client configuration."""
+        """Validate MCP client configuration (optional)."""
         mcp = self.settings.mcp_client
 
         if not mcp.fsg_endpoint:
             self.issues.append(
                 ValidationIssue(
-                    component="MCPClient", field="fsg_endpoint", message="FSG endpoint is required", severity="error"
+                    component="MCPClient",
+                    field="fsg_endpoint",
+                    message="FSG endpoint not configured - FSG lookups will be unavailable",
+                    severity="warning",
                 )
             )
-            return False
 
         if not mcp.phoenix_endpoint:
             self.issues.append(
                 ValidationIssue(
                     component="MCPClient",
                     field="phoenix_endpoint",
-                    message="Phoenix endpoint is required",
-                    severity="error",
+                    message="Phoenix endpoint not configured - Phoenix enrichment will be unavailable",
+                    severity="warning",
                 )
             )
-            return False
 
         return True
 
