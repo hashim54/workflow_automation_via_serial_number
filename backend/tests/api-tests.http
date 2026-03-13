@@ -38,40 +38,34 @@ Accept: application/json
 # WORKFLOWS — POST /api/v1/workflows
 ###############################################################################
 
-### Execute Workflow - Basic (serial number only)
-# @name executeWorkflowBasic
+### Execute Workflow - Upload image file
+# @name executeWorkflow
+POST {{baseUrl}}/api/v1/workflows
+Content-Type: multipart/form-data; boundary=--boundary
+
+----boundary
+Content-Disposition: form-data; name="file"; filename="1.jpg"
+Content-Type: image/jpeg
+
+< ./images/1.jpg
+----boundary--
+
+### Execute Workflow - Missing file (expects 422)
 POST {{baseUrl}}/api/v1/workflows
 Content-Type: application/json
 
-{
-  "serial_number": "{{serialNumber}}"
-}
+{}
 
-### Execute Workflow - With data payload
-# @name executeWorkflowWithData
+### Execute Workflow - Unsupported file type (expects 422)
 POST {{baseUrl}}/api/v1/workflows
-Content-Type: application/json
+Content-Type: multipart/form-data; boundary=--boundary
 
-{
-  "serial_number": "{{serialNumber}}",
-  "data": {
-    "image_url": "https://example.com/images/serial-tag.jpg",
-    "metadata": {
-      "source": "mobile_app",
-      "timestamp": "2026-03-11T10:30:00Z"
-    }
-  }
-}
+----boundary
+Content-Disposition: form-data; name="file"; filename="document.pdf"
+Content-Type: application/pdf
 
-### Execute Workflow - Missing serial_number (expects 422)
-POST {{baseUrl}}/api/v1/workflows
-Content-Type: application/json
-
-{
-  "data": {
-    "note": "Missing serial number"
-  }
-}
+< ./document.pdf
+----boundary--
 
 ###############################################################################
 # WORKFLOWS — GET /api/v1/workflows/{serial_number}

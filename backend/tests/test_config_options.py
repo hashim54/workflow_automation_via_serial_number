@@ -6,8 +6,8 @@ from app.models.config_options import (
     ApplicationInsightsOptions,
     BlobStorageOptions,
     CosmosDBOptions,
-    MCPClientOptions,
     FoundryOptions,
+    MCPClientOptions,
     WorkflowOptions,
 )
 from pydantic import ValidationError
@@ -92,6 +92,7 @@ class TestFoundryOptions:
             project_endpoint="https://test.api.azureml.ms",
             image_processing_agent_id="agent-img-001",
             reasoning_agent_id="agent-reason-001",
+            image_processing_model="gpt-4o",
         )
         assert config.image_processing_agent_id == "agent-img-001"
         assert config.reasoning_agent_id == "agent-reason-001"
@@ -102,8 +103,8 @@ class TestFoundryOptions:
             project_endpoint="https://test.api.azureml.ms",
             image_processing_agent_id="img-001",
             reasoning_agent_id="reason-001",
+            image_processing_model="gpt-4o",
         )
-        assert config.image_processing_temperature == 0.1
         assert config.reasoning_temperature == 0.3
 
     def test_max_tokens_defaults(self):
@@ -112,8 +113,8 @@ class TestFoundryOptions:
             project_endpoint="https://test.api.azureml.ms",
             image_processing_agent_id="img-001",
             reasoning_agent_id="reason-001",
+            image_processing_model="gpt-4o",
         )
-        assert config.image_processing_max_tokens == 2048
         assert config.reasoning_max_tokens == 4096
 
     def test_temperature_bounds(self):
@@ -123,14 +124,7 @@ class TestFoundryOptions:
                 project_endpoint="https://test.api.azureml.ms",
                 image_processing_agent_id="img-001",
                 reasoning_agent_id="reason-001",
-                image_processing_temperature=-0.1,  # Invalid: < 0
-            )
-
-        with pytest.raises(ValidationError):
-            FoundryOptions(
-                project_endpoint="https://test.api.azureml.ms",
-                image_processing_agent_id="img-001",
-                reasoning_agent_id="reason-001",
+                image_processing_model="gpt-4o",
                 reasoning_temperature=2.5,  # Invalid: > 2.0
             )
 
@@ -180,12 +174,16 @@ class TestMCPClientOptions:
 
     def test_defaults(self):
         """Test default timeout and retry values."""
-        config = MCPClientOptions(
-            fsg_endpoint="https://test.com/fsg",
-            phoenix_endpoint="https://test.com/phoenix",
-        )
+        config = MCPClientOptions()
+        assert config.fsg_endpoint is None
+        assert config.phoenix_endpoint is None
         assert config.timeout_seconds == 30
         assert config.max_retries == 3
+
+    def test_endpoint_https_validation(self):
+        """Test that non-https MCP endpoints raise a validation error."""
+        with pytest.raises(ValidationError, match="must start with https://"):
+            MCPClientOptions(fsg_endpoint="http://apim.azure-api.net/fsg")
 
 
 @pytest.mark.unit
@@ -195,8 +193,9 @@ class TestWorkflowOptions:
     def test_defaults(self):
         """Test default workflow settings."""
         config = WorkflowOptions()
-        # Add assertions when workflow options are defined
-        pass
+        assert config.max_execution_time_seconds == 300
+        assert config.enable_image_processing is True
+        assert config.enable_parallel_mcp_calls is False
 
 
 @pytest.mark.unit

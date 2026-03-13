@@ -7,12 +7,15 @@ Foundry reasoning, and persistence). This class is intended to be subclassed by
 SerialNumberWorkflow in core.py, which adds the build_workflow() entry-point.
 """
 
+import mimetypes
+import uuid
+
 from agent_framework import WorkflowContext
 from app.core.logger import Logger
 from app.core.settings import Settings
 from app.mcp_clients.fsg_client import FsgClient
 from app.mcp_clients.phoenix_client import PhoenixClient
-from app.models.workflow import WorkflowState
+from app.models.workflow import SerialNumberData, WorkflowState
 from app.services.blob_storage_service import BlobStorageService
 from app.services.cosmos_db_service import CosmosDBService
 from app.services.foundry_service import FoundryService
@@ -69,53 +72,85 @@ class SerialNumberWorkflowExecutors:
 
     async def artifact_storage_executor(self, state: WorkflowState, ctx: WorkflowContext[WorkflowState]) -> None:
         """
-        Step 1: Store input artifact (text + optional image) in Blob Storage.
+        Step 1: Upload image to Blob Storage, then extract serial number via Foundry.
 
-        Uploads the raw input data to Azure Blob Storage for audit trail and
-        later reference.
+        Uploads the raw image to Azure Blob Storage for audit trail, then sends
+        the image to the Foundry image processing agent to extract serial number data.
         """
         self.logger.info(
-            f"[ArtifactStorage] Storing artifact for serial_number={state.serial_number}",
-            extra={"serial_number": state.serial_number, "has_image": state.image_bytes is not None},
+            "[ArtifactStorage] Uploading artifact and extracting serial number from image",
+            extra={"has_image": state.image_bytes is not None},
         )
 
         with self.logger.trace_operation(
             "artifact_storage",
-            serial_number=state.serial_number,
             has_image=state.image_bytes is not None,
-            text_length=len(state.text) if state.text else 0,
         ) as span:
             try:
-                # TODO: Implement blob storage upload
-                # artifact_url = await self.blob_storage.upload_artifact(
-                #     serial_number=state.serial_number,
-                #     text=state.text,
-                #     image_bytes=state.image_bytes
-                # )
-                # state.artifact_url = artifact_url
-                # span.set_attribute("artifact_url", artifact_url)
+                if not state.image_bytes:
+                    raise ValueError("No image bytes provided in workflow state")
+
+                # 1. Upload image to Blob Storage
+                ext = mimetypes.guess_extension(state.content_type or "image/jpeg") or ".jpg"
+                blob_name = f"{uuid.uuid4()}/input{ext}"
+                artifact_url = await self.blob_storage.upload_artifact(
+                    container=self.settings.blob_artifacts_container,
+                    blob_name=blob_name,
+                    data=state.image_bytes,
+                )
+                state.artifact_url = artifact_url
+                span.set_attribute("artifact_url", artifact_url)
+
+                # 2. Extract serial number from image via Foundry image processing agent
+                extraction = await self.foundry.extract_from_image(
+                    image_bytes=state.image_bytes,
+                    content_type=state.content_type or "image/jpeg",
+                )
+
+                if "error" not in extraction:
+                    serial_fields = SerialNumberData.model_fields.keys()
+                    filtered = {k: v for k, v in extraction.items() if k in serial_fields}
+
+                    # Sanitize additional_identifiers: remove None values (model expects Dict[str, str])
+                    if "additional_identifiers" in filtered and isinstance(filtered["additional_identifiers"], dict):
+                        filtered["additional_identifiers"] = {
+                            k: v for k, v in filtered["additional_identifiers"].items() if v is not None
+                        }
+
+                    # Sanitize confidence: must be a float; ignore non-numeric strings from the agent
+                    if "confidence" in filtered:
+                        try:
+                            filtered["confidence"] = float(filtered["confidence"])
+                        except (TypeError, ValueError):
+                            filtered.pop("confidence")
+
+                    state.serial_data = SerialNumberData(**filtered)
+                    if state.serial_data.serial_number:
+                        state.serial_number = state.serial_data.serial_number
 
                 state.thought_process.append(
                     {
                         "step": "artifact_storage",
                         "details": {
+                            "artifact_url": state.artifact_url,
                             "serial_number": state.serial_number,
-                            "has_image": state.image_bytes is not None,
-                            "text_length": len(state.text) if state.text else 0,
-                            # "artifact_url": artifact_url,
+                            "has_image": True,
                         },
                     }
                 )
 
-                self.logger.info("[ArtifactStorage] Artifact stored successfully")
+                self.logger.info(
+                    f"[ArtifactStorage] Complete — serial_number={state.serial_number}",
+                    extra={"serial_number": state.serial_number, "artifact_url": artifact_url},
+                )
 
             except Exception as e:
                 self.logger.error(
                     f"[ArtifactStorage] Failed: {e}",
-                    extra={"serial_number": state.serial_number, "error": str(e)},
+                    extra={"error": str(e)},
                     exc_info=True,
                 )
-                state.error = f"Failed to store artifact: {str(e)}"
+                state.error = f"Failed artifact storage step: {str(e)}"
 
         # Send state to next executor
         await ctx.send_message(state)

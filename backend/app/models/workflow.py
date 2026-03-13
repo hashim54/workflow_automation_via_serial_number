@@ -114,9 +114,10 @@ class WorkflowState(BaseModel):
         thought_process: Detailed step-by-step execution log for observability.
     """
 
-    serial_number: str = Field(..., description="Primary serial number being processed")
+    serial_number: Optional[str] = Field(default=None, description="Primary serial number being processed")
     text: Optional[str] = Field(default=None, description="Optional text input from request")
     image_bytes: Optional[bytes] = Field(default=None, description="Raw image bytes if provided")
+    content_type: Optional[str] = Field(default=None, description="MIME type of the uploaded image (e.g. image/jpeg)")
 
     # Execution control
     current_step: Literal[
