@@ -73,6 +73,7 @@ class WorkflowService:
         return WorkflowResponse(
             status="not_implemented",
             image_url=request.image_url,
+            extraction_result=request.extraction_result,
             result={
                 "message": "Workflow execution not yet implemented",
                 "configuration_valid": True,

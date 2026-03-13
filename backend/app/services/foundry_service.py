@@ -1,10 +1,21 @@
 from __future__ import annotations
 
+import base64
+import json
 from typing import Any, AsyncIterator, Optional
 
 from app.core.settings import Settings
-from azure.ai.projects.aio import AIProjectClient
+from azure.ai.agents.aio import AgentsClient
+from azure.ai.agents.models import (
+    AgentThreadCreationOptions,
+    MessageImageUrlParam,
+    MessageInputImageUrlBlock,
+    MessageRole,
+    ThreadMessageOptions,
+)
 from azure.identity.aio import DefaultAzureCredential
+
+from prompts.templates import ImageAnalysisPrompts
 
 
 class FoundryService:
@@ -28,10 +39,10 @@ class FoundryService:
         """
         self._settings = settings
         self._credential: Optional[DefaultAzureCredential] = None
-        self._client: Optional[AIProjectClient] = None
+        self._client: Optional[AgentsClient] = None
 
-    def _ensure_client(self) -> AIProjectClient:
-        """Ensure Foundry client is initialized."""
+    def _ensure_client(self) -> AgentsClient:
+        """Ensure Foundry agents client is initialized."""
         if self._client is None:
             endpoint = self._settings.azure_ai_project_endpoint
             if not endpoint:
@@ -40,7 +51,7 @@ class FoundryService:
                 )
 
             self._credential = DefaultAzureCredential()
-            self._client = AIProjectClient(endpoint=endpoint, credential=self._credential)
+            self._client = AgentsClient(endpoint=endpoint, credential=self._credential)
         return self._client
 
     async def close(self) -> None:
@@ -49,6 +60,69 @@ class FoundryService:
             await self._client.close()
         if self._credential:
             await self._credential.close()
+
+    async def extract_from_image(
+        self,
+        image_bytes: bytes,
+        content_type: str,
+    ) -> dict[str, Any]:
+        """Send an image to the image processing agent and extract serial number data.
+
+        Args:
+            image_bytes: Raw image bytes.
+            content_type: MIME type of the image (e.g. "image/png").
+
+        Returns:
+            Parsed JSON dict from the agent with serial_number, model_number, etc.
+        """
+        client = self._ensure_client()
+
+        agent_id = self._settings.microsoft_foundry.image_processing_agent_id
+        if not agent_id:
+            raise ValueError("Image processing agent ID is not configured (FOUNDRY_IMAGE_PROCESSING_AGENT_ID).")
+
+        # Encode image as base64 data URL
+        b64 = base64.b64encode(image_bytes).decode("ascii")
+        data_url = f"data:{content_type};base64,{b64}"
+
+        user_prompt = ImageAnalysisPrompts.build_serial_extraction_prompt()
+
+        # Build thread with multimodal message (text + image)
+        thread_options = AgentThreadCreationOptions(
+            messages=[
+                ThreadMessageOptions(
+                    role=MessageRole.USER,
+                    content=[
+                        {"type": "text", "text": user_prompt},
+                        MessageInputImageUrlBlock(
+                            image_url=MessageImageUrlParam(url=data_url, detail="high"),
+                        ),
+                    ],
+                )
+            ]
+        )
+
+        # Create thread, run agent, and poll until completion
+        run = await client.create_thread_and_process_run(
+            agent_id=agent_id,
+            thread=thread_options,
+        )
+
+        if run.status != "completed":
+            return {"error": f"Agent run finished with status: {run.status}"}
+
+        # Retrieve the assistant's last text response
+        last_msg = await client.messages.get_last_message_text_by_role(
+            thread_id=run.thread_id, role=MessageRole.AGENT
+        )
+        if last_msg:
+            raw_text = last_msg.text.value
+            try:
+                return json.loads(raw_text)
+            except json.JSONDecodeError:
+                return {"raw_response": raw_text}
+
+        return {"error": "No assistant response received"}
 
     async def invoke_agent(
         self,
@@ -76,45 +150,44 @@ class FoundryService:
             ...     ]
             ... )
         """
-        # Get agents client
         client = self._ensure_client()
-        agents = client.agents  # type: ignore[attr-defined]
 
-        # Create or use existing thread
         if thread_id:
-            thread = await agents.get_thread(thread_id)  # type: ignore[attr-defined]
+            # Add messages to existing thread, then run
+            for message in messages:
+                await client.messages.create(
+                    thread_id=thread_id,
+                    role=message.get("role", "user"),
+                    content=message.get("content", ""),
+                )
+            run = await client.runs.create_and_process(
+                thread_id=thread_id, agent_id=agent_id
+            )
         else:
-            thread = await agents.create_thread()  # type: ignore[attr-defined]
-
-        # Add messages to thread
-        for message in messages:
-            await agents.create_message(  # type: ignore[attr-defined]
-                thread_id=thread.id, role=message.get("role", "user"), content=message.get("content", "")
+            # Create thread with messages and run in one call
+            thread_options = AgentThreadCreationOptions(
+                messages=[
+                    ThreadMessageOptions(
+                        role=message.get("role", "user"),
+                        content=message.get("content", ""),
+                    )
+                    for message in messages
+                ]
+            )
+            run = await client.create_thread_and_process_run(
+                agent_id=agent_id, thread=thread_options
             )
 
-        # Run agent
-        run = await agents.create_run(thread_id=thread.id, assistant_id=agent_id)  # type: ignore[attr-defined]
-
-        # Wait for completion
-        while run.status in ["queued", "in_progress", "requires_action"]:
-            await agents.wait_for_run(thread_id=thread.id, run_id=run.id)  # type: ignore[attr-defined]
-            run = await agents.get_run(thread_id=thread.id, run_id=run.id)  # type: ignore[attr-defined]
-
-        # Get messages
-        messages_response = await agents.list_messages(thread_id=thread.id)  # type: ignore[attr-defined]
-
-        # Extract latest assistant message
-        latest_message = None
-        for msg in messages_response.data:
-            if msg.role == "assistant":
-                latest_message = msg
-                break
+        # Get latest assistant message
+        last_msg = await client.messages.get_last_message_text_by_role(
+            thread_id=run.thread_id, role=MessageRole.AGENT
+        )
 
         return {
-            "thread_id": thread.id,
+            "thread_id": run.thread_id,
             "run_id": run.id,
             "status": run.status,
-            "content": latest_message.content[0].text.value if latest_message else None,
+            "content": last_msg.text.value if last_msg else None,
         }
 
     async def stream_agent(
@@ -142,39 +215,38 @@ class FoundryService:
             ... ):
             ...     print(chunk)
         """
-        # Get agents client
         client = self._ensure_client()
-        agents = client.agents  # type: ignore[attr-defined]
 
         # Create or use existing thread
         if thread_id:
-            thread = await agents.get_thread(thread_id)  # type: ignore[attr-defined]
+            tid = thread_id
         else:
-            thread = await agents.create_thread()  # type: ignore[attr-defined]
+            thread = await client.threads.create()
+            tid = thread.id
 
         # Add messages to thread
         for message in messages:
-            await agents.create_message(  # type: ignore[attr-defined]
-                thread_id=thread.id, role=message.get("role", "user"), content=message.get("content", "")
+            await client.messages.create(
+                thread_id=tid, role=message.get("role", "user"), content=message.get("content", "")
             )
 
         # Create streaming run
-        stream = await agents.create_run_stream(thread_id=thread.id, assistant_id=agent_id)  # type: ignore[attr-defined]
-
-        # Stream events
-        async for event in stream:
-            if event.event == "thread.message.delta":
-                if event.data and event.data.delta and event.data.delta.content:
-                    for content in event.data.delta.content:
-                        if hasattr(content, "text") and content.text:
-                            yield {
-                                "type": "content",
-                                "delta": content.text.value,
-                                "thread_id": thread.id,
-                            }
-            elif event.event == "thread.run.completed":
-                yield {
-                    "type": "done",
-                    "thread_id": thread.id,
-                    "run_id": event.data.id,
-                }
+        async with await client.runs.stream(
+            thread_id=tid, agent_id=agent_id
+        ) as event_handler:
+            async for event_type, event_data, _ in event_handler:
+                if hasattr(event_data, "delta") and event_data.delta:
+                    if event_data.delta.content:
+                        for block in event_data.delta.content:
+                            if hasattr(block, "text") and block.text:
+                                yield {
+                                    "type": "content",
+                                    "delta": block.text.value,
+                                    "thread_id": tid,
+                                }
+                elif hasattr(event_data, "status") and event_data.status == "completed":
+                    yield {
+                        "type": "done",
+                        "thread_id": tid,
+                        "run_id": event_data.id,
+                    }
