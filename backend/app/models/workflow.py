@@ -23,28 +23,92 @@ class WorkflowStatus(str, Enum):
     FAILED = "failed"
 
 
-class SerialNumberData(BaseModel):
-    """Extracted serial number information from image processing.
+class IdentificationData(BaseModel):
+    """Identification fields from the Flygt data plate."""
 
-    Attributes:
-        serial_number: The primary serial number extracted from the image.
-        model_number: Associated model or part number if available.
-        additional_identifiers: Any other identifiers found (MAC address, UUID, etc.).
-        location: Where on the device/label the serial number was found.
-        condition: Physical condition of the label (clear, worn, damaged).
-        confidence: Confidence score from 0.0 to 1.0 from the vision model.
-        notes: Additional observations from the image analysis.
+    serial_number_raw: Optional[str] = Field(default=None, description="Raw serial number as printed on the plate")
+    normalized_serial_number: Optional[str] = Field(default=None, description="Digits-only normalized serial number")
+    product_number: Optional[str] = Field(default=None, description="Product number")
+    curve_or_propeller_code: Optional[str] = Field(default=None, description="Curve code or propeller code")
+
+
+class ElectricalData(BaseModel):
+    """Electrical characteristics from the data plate."""
+
+    phase: Optional[str] = Field(default=None)
+    current_type: Optional[str] = Field(default=None)
+    frequency_hz: Optional[str] = Field(default=None)
+    rated_voltage: Optional[str] = Field(default=None)
+    rated_current: Optional[str] = Field(default=None)
+    rated_power_kw: Optional[str] = Field(default=None)
+    rated_speed_rpm: Optional[str] = Field(default=None)
+    power_factor: Optional[str] = Field(default=None)
+
+
+class ThermalProtectionData(BaseModel):
+    """Thermal and protection data from the data plate."""
+
+    thermal_class: Optional[str] = Field(default=None)
+    thermal_protection: Optional[str] = Field(default=None)
+    duty_class: Optional[str] = Field(default=None)
+    duty_factor: Optional[str] = Field(default=None)
+    ip_rating: Optional[str] = Field(default=None)
+    max_ambient_temperature_c: Optional[str] = Field(default=None)
+
+
+class MechanicalData(BaseModel):
+    """Mechanical data from the data plate."""
+
+    maximum_submergence_m: Optional[str] = Field(default=None)
+    direction_of_rotation: Optional[str] = Field(default=None)
+    product_weight_kg: Optional[str] = Field(default=None)
+
+
+class ComplianceData(BaseModel):
+    """Compliance and standards data from the data plate."""
+
+    international_standard: Optional[str] = Field(default=None)
+    notified_body: Optional[str] = Field(default=None)
+    compliance_symbols: List[str] = Field(default_factory=list)
+
+
+class ExtractionContext(BaseModel):
+    """Context about the extraction (label location, condition, confidence)."""
+
+    label_location: Optional[str] = Field(default=None)
+    label_condition: Optional[str] = Field(default=None)
+    confidence: Optional[str] = Field(default=None, description="high, medium, or low")
+
+
+class SerialNumberData(BaseModel):
+    """Extracted data plate information from Flygt pump image processing.
+
+    Nested structure matching the Xylem Flygt data plate fields
+    as defined in the ImageAnalysisPrompts output format.
     """
 
-    serial_number: Optional[str] = Field(default=None, description="Primary serial number extracted")
-    model_number: Optional[str] = Field(default=None, description="Associated model or part number")
-    additional_identifiers: Dict[str, str] = Field(
-        default_factory=dict, description="Additional identifiers (MAC, UUID, etc.)"
-    )
-    location: Optional[str] = Field(default=None, description="Location of serial number on device")
-    condition: Optional[str] = Field(default=None, description="Physical condition of label")
-    confidence: Optional[float] = Field(default=None, description="Confidence score (0.0-1.0)")
+    identification: Optional[IdentificationData] = Field(default=None, description="Identification fields")
+    electrical: Optional[ElectricalData] = Field(default=None, description="Electrical characteristics")
+    thermal_and_protection: Optional[ThermalProtectionData] = Field(default=None, description="Thermal and protection")
+    mechanical: Optional[MechanicalData] = Field(default=None, description="Mechanical data")
+    compliance: Optional[ComplianceData] = Field(default=None, description="Compliance and standards")
+    context: Optional[ExtractionContext] = Field(default=None, description="Extraction context")
     notes: Optional[str] = Field(default=None, description="Additional observations")
+
+    # Convenience properties for backward compatibility
+    @property
+    def serial_number(self) -> Optional[str]:
+        """Get the raw serial number from identification."""
+        if self.identification:
+            return self.identification.serial_number_raw
+        return None
+
+    @property
+    def normalized_serial_number(self) -> Optional[str]:
+        """Get the normalized serial number from identification."""
+        if self.identification:
+            return self.identification.normalized_serial_number
+        return None
 
 
 class FSGLookupResult(BaseModel):

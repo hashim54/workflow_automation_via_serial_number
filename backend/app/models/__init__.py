@@ -8,10 +8,16 @@ from app.models.config_options import (
     WorkflowOptions,
 )
 from app.models.workflow import (
+    ComplianceData,
+    ElectricalData,
+    ExtractionContext,
     FSGLookupResult,
+    IdentificationData,
+    MechanicalData,
     PhoenixEnrichmentResult,
     ReasoningOutput,
     SerialNumberData,
+    ThermalProtectionData,
     WorkflowRecord,
     WorkflowState,
     WorkflowStatus,

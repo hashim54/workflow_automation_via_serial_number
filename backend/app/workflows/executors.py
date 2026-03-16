@@ -108,23 +108,11 @@ class SerialNumberWorkflowExecutors:
                 )
 
                 if "error" not in extraction:
+                    # Build SerialNumberData from the nested agent response
                     serial_fields = SerialNumberData.model_fields.keys()
                     filtered = {k: v for k, v in extraction.items() if k in serial_fields}
-
-                    # Sanitize additional_identifiers: remove None values (model expects Dict[str, str])
-                    if "additional_identifiers" in filtered and isinstance(filtered["additional_identifiers"], dict):
-                        filtered["additional_identifiers"] = {
-                            k: v for k, v in filtered["additional_identifiers"].items() if v is not None
-                        }
-
-                    # Sanitize confidence: must be a float; ignore non-numeric strings from the agent
-                    if "confidence" in filtered:
-                        try:
-                            filtered["confidence"] = float(filtered["confidence"])
-                        except (TypeError, ValueError):
-                            filtered.pop("confidence")
-
                     state.serial_data = SerialNumberData(**filtered)
+
                     if state.serial_data.serial_number:
                         state.serial_number = state.serial_data.serial_number
 
