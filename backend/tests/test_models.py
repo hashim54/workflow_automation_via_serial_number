@@ -4,10 +4,16 @@ from datetime import datetime
 
 import pytest
 from app.models.workflow import (
+    ComplianceData,
+    ElectricalData,
+    ExtractionContext,
     FSGLookupResult,
+    IdentificationData,
+    MechanicalData,
     PhoenixEnrichmentResult,
     ReasoningOutput,
     SerialNumberData,
+    ThermalProtectionData,
     WorkflowRecord,
     WorkflowState,
     WorkflowStatus,
@@ -35,7 +41,13 @@ class TestWorkflowState:
 
     def test_state_with_all_fields(self):
         """Test workflow state with all fields populated."""
-        serial_data = SerialNumberData(serial_number="SN-67890", confidence=0.95)
+        serial_data = SerialNumberData(
+            identification=IdentificationData(
+                serial_number_raw="SN-67890",
+                normalized_serial_number="67890",
+            ),
+            context=ExtractionContext(confidence="high"),
+        )
         fsg_data = FSGLookupResult(warranty_status="active", service_level="premium")
         phoenix_data = PhoenixEnrichmentResult(enrichment_data={"key": "value"})
         reasoning = ReasoningOutput(analysis="Test analysis", recommendations=["action1"])
@@ -54,6 +66,7 @@ class TestWorkflowState:
         assert state.artifact_url is not None
         assert state.serial_data is not None
         assert state.serial_data.serial_number == "SN-67890"
+        assert state.serial_data.normalized_serial_number == "67890"
         assert state.fsg_data is not None
         assert state.phoenix_data is not None
         assert state.reasoning is not None
