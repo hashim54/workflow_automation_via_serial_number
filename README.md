@@ -2,6 +2,12 @@
 
 A FastAPI service that automates data enrichment workflows triggered by a serial number. It integrates with Azure Cosmos DB for persistence, Azure Blob Storage for artifacts, Microsoft Foundry hosted agents for AI reasoning, and MCP servers for external data lookups.
 
+## Architecture
+
+![Azure Pipeline Flow](docs/diagrams/architecture-azure.png)
+
+> Detailed layered architecture: [`docs/diagrams/architecture-layered.drawio`](docs/diagrams/architecture-layered.drawio)
+
 ## Prerequisites
 
 - Python 3.12

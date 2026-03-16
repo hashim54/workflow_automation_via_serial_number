@@ -173,24 +173,29 @@ class TestSerialNumberData:
         data = SerialNumberData()
 
         assert data.serial_number is None
-        assert data.confidence is None
-        assert data.additional_identifiers == {}
+        assert data.identification is None
+        assert data.context is None
 
     def test_create_complete(self):
         """Test creating with complete data."""
         data = SerialNumberData(
-            serial_number="SN-TEST-001",
-            model_number="MODEL-X",
-            additional_identifiers={"MAC": "00:11:22:33:44:55"},
-            location="bottom panel",
-            condition="clear",
-            confidence=0.98,
+            identification=IdentificationData(
+                serial_number_raw="SN-TEST-001",
+                product_number="MODEL-X",
+            ),
+            context=ExtractionContext(
+                label_location="bottom panel",
+                label_condition="clear",
+                confidence="high",
+            ),
             notes="Label is in excellent condition",
         )
 
         assert data.serial_number == "SN-TEST-001"
-        assert data.confidence == 0.98
-        assert "MAC" in data.additional_identifiers
+        assert data.context is not None
+        assert data.context.confidence == "high"
+        assert data.identification is not None
+        assert data.identification.product_number == "MODEL-X"
 
 
 @pytest.mark.unit
