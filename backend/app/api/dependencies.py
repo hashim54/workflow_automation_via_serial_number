@@ -5,6 +5,7 @@ from app.core.container import Container
 from app.core.settings import Settings
 from app.services.blob_storage_service import BlobStorageService
 from app.services.foundry_service import FoundryService
+from app.services.mock_cosmos_db_service import MockCosmosDBService
 from app.services.workflow_service import WorkflowService
 
 
@@ -34,3 +35,10 @@ def get_settings(
     settings: Settings = Depends(Provide[Container.settings]),
 ) -> Settings:
     return settings
+
+
+@inject
+def get_mock_cosmos_service(
+    service: MockCosmosDBService = Depends(Provide[Container.mock_cosmos]),
+) -> MockCosmosDBService:
+    return service

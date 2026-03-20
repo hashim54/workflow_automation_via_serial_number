@@ -95,6 +95,9 @@ minversion = "8.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:agent_framework",
+]
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
     "unit: marks tests as unit tests",

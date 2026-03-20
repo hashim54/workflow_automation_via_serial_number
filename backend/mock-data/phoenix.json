@@ -1,0 +1,401 @@
+[
+  {
+    "id": "phoenix_30691600035",
+    "lookup_product_input_product_number": "30691600035",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 1,
+      "phoenix_tool_input": "lookup_product(product_number=30691600035)"
+    },
+    "payload": {
+      "sales_code": "3069",
+      "version_code": "160",
+      "product_number": "0035",
+      "full_product_number": "3069.160-0035",
+      "is_product_standard": true,
+      "modules": [
+        {
+          "module_number": "070",
+          "module_alt": 1,
+          "module_description": "Pump housing \n SH \n N \n DN 65 \n Installation: \n X \n Outlet diameter (mm): 65",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "131",
+          "module_alt": 1,
+          "module_description": "Stator \n 3-phase \n 50 Hz \n 2-poles \n 220V-230V D \n 380V-400V Y \n P2=2,40kW \n Max ambient temperature 40 DC \n Thermal contact \n 125 DC",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "270",
+          "module_alt": 1,
+          "module_description": "N-impeller Adaptive \n SH \n 50Hz \n 3-phase \n Maximum temperature 40 DC \n Material Grey cast iron \n Curve code: 270, 270",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "300",
+          "module_alt": 1,
+          "module_description": "Stator Housing",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "499",
+          "module_alt": 1,
+          "module_description": "",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "520",
+          "module_alt": 1,
+          "module_description": "Power cable \n SUBCAB 4G1,5+2x1,5 \n 15 - 16mm \n L= 10m",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "699",
+          "module_alt": 1,
+          "module_description": "",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "705",
+          "module_alt": 1,
+          "module_description": "Maximum temperature 40 DC \n Main O-ring material: NBR",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "900",
+          "module_alt": 1,
+          "module_description": "Coating: \n M0700.00.0004 \n Thickness = min 120 micrometer \n External",
+          "classification_status": "standard",
+          "module_alternatives": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "phoenix_30691800328",
+    "lookup_product_input_product_number": "30691800328",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 2,
+      "phoenix_tool_input": "lookup_product(product_number=30691800328)"
+    },
+    "payload": {
+      "sales_code": "3069",
+      "version_code": "180",
+      "product_number": "0328",
+      "full_product_number": "3069.180-0328",
+      "is_product_standard": false,
+      "modules": [
+        {
+          "module_number": "070",
+          "module_alt": 1,
+          "module_description": "Pump housing \n Abration resistance design \n MT \n D \n DN 50 \n ISO G2 \n Diffusor material: Hardened cast iron \n Installation: \n F",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "071", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "131",
+          "module_alt": 1,
+          "module_description": "Stator \n 3-phase \n 50 Hz \n 2-poles \n 220V-230V D \n 380V-400V Y \n P2=2,40kW \n Max ambient temperature 40 DC \n Thermal contact \n 125 DC",
+          "classification_status": "standard",
+          "module_alternatives": [
+            { "module_number": "133", "module_alt": 1, "module_description": "" },
+            { "module_number": "134", "module_alt": 1, "module_description": "" },
+            { "module_number": "135", "module_alt": 1, "module_description": "" },
+            { "module_number": "137", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "270",
+          "module_alt": 1,
+          "module_description": "D-impeller \n MT \n 50Hz \n 3-phase \n Maximum temperature 40 DC \n Material Hardened cast iron \n Curve code: 270",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "272", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "300",
+          "module_alt": 1,
+          "module_description": "Stator Housing",
+          "classification_status": "standard",
+          "module_alternatives": [
+            { "module_number": "310", "module_alt": 1, "module_description": "" },
+            { "module_number": "350", "module_alt": 1, "module_description": "" },
+            { "module_number": "360", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "450",
+          "module_alt": 1,
+          "module_description": "380V - 415 V \n Current range: 0 - 1000 A \n Thermal contacts are not connected \n Phase sequence indicator \n Supply connection CEE 5-PLUG 16A \n Cable gland diameter: 0 - 1000 mm \n Not CSA approved",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "402", "module_alt": 1, "module_description": "" },
+            { "module_number": "412", "module_alt": 1, "module_description": "" },
+            { "module_number": "415", "module_alt": 1, "module_description": "" },
+            { "module_number": "499", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "699",
+          "module_alt": 1,
+          "module_description": "",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "705",
+          "module_alt": 1,
+          "module_description": "Maximum temperature 40 DC \n Main O-ring material: NBR",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "807",
+          "module_alt": 1,
+          "module_description": "Mechanical Seals \n Material inner seal: \n Cemented carbide (WCCR) - Cemented carbide (WCCR) \n Material outer seal: \n Cemented carbide (WCCR) - Cemented carbide (WCCR) \n Abration resistance design",
+          "classification_status": "non_standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "900",
+          "module_alt": 1,
+          "module_description": "Coating: \n M0700.00.0004 \n Thickness = min 120 micrometer \n External",
+          "classification_status": "standard",
+          "module_alternatives": [
+            { "module_number": "901", "module_alt": 1, "module_description": "" },
+            { "module_number": "902", "module_alt": 1, "module_description": "" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "phoenix_30851600007",
+    "lookup_product_input_product_number": "30851600007",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 3,
+      "phoenix_tool_input": "lookup_product(product_number=30851600007)"
+    },
+    "payload": {
+      "sales_code": "3085",
+      "version_code": "160",
+      "product_number": "0007",
+      "full_product_number": "3085.160-0007",
+      "is_product_standard": true,
+      "modules": [
+        {
+          "module_number": "006",
+          "module_alt": 1,
+          "module_description": "Pump housing \n Prepared for Flush valve \n MT \n N \n Guide pin \n DN 80 \n Installation: \n S \n X \n F \n P",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "151",
+          "module_alt": 1,
+          "module_description": "Stator \n 3-phase \n 50 Hz \n 4-poles \n 380V-400V Y \n 220V-230V D \n P2=2kW \n Max ambient temperature 40 DC \n Thermal contact \n 125 DC",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "260",
+          "module_alt": 1,
+          "module_description": "N-impeller Adaptive \n Guide pin \n MT \n 50Hz \n 3-phase \n Maximum temperature 40 DC \n Material Grey cast iron \n Curve code: 460",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "300",
+          "module_alt": 1,
+          "module_description": "Bearing holder",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "412",
+          "module_alt": 1,
+          "module_description": "Cable entry \n No of cable entries: 1 \n (14)-16mm",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "530",
+          "module_alt": 1,
+          "module_description": "Power cable x 1 \n SUBCAB 4G1,5+2x1,5 \n 15 - 16mm \n L= 10m",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "697",
+          "module_alt": 1,
+          "module_description": "Sliding bracket \n Installation \n P \n MT \n SH \n Inlet DN 80",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "700",
+          "module_alt": 1,
+          "module_description": "Parts for \n Maximum temperature 40 DC \n Main O-ring material: NBR",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "805",
+          "module_alt": 1,
+          "module_description": "Mechanical Seals \n Material inner seal: \n Carbon (CSb) - Aluminium oxide (Al2 O3) \n Material outer seal: \n Cemented carbide (WCCR) - Cemented carbide (WCCR) \n Outer type G \n Seal ring holder: Polymers (PPS)",
+          "classification_status": "standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "900",
+          "module_alt": 1,
+          "module_description": "Coating: \n M0700.00.0004 \n External",
+          "classification_status": "standard",
+          "module_alternatives": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "phoenix_31029000242",
+    "lookup_product_input_product_number": "31029000242",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 4,
+      "phoenix_tool_input": "lookup_product(product_number=31029000242)"
+    },
+    "payload": {
+      "sales_code": "3102",
+      "version_code": "900",
+      "product_number": "0242",
+      "full_product_number": "3102.900-0242",
+      "is_product_standard": false,
+      "modules": [
+        {
+          "module_number": "031",
+          "module_alt": 1,
+          "module_description": "Pump housing \n Prepared for Flush valve \n MT \n N \n DN 100 \n Drilled acc. to: \n EN 1092-2 tab. 9 \n Installation: \n T \n X \n P \n S",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "003", "module_alt": 1, "module_description": "" },
+            { "module_number": "033", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "137",
+          "module_alt": 1,
+          "module_description": "Motor type: LSPM \n Stator \n 3-phase \n 50 Hz \n 4-poles \n 380V-400V D \n 660V-690V Y \n P2=3,50kW \n Max ambient temperature 40 DC \n Thermal contact \n 125 DC",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "134", "module_alt": 1, "module_description": "" },
+            { "module_number": "135", "module_alt": 1, "module_description": "" },
+            { "module_number": "140", "module_alt": 1, "module_description": "" },
+            { "module_number": "141", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "260",
+          "module_alt": 1,
+          "module_description": "N-impeller Adaptive \n Guide pin \n MT \n 50Hz \n 3-phase \n Maximum temperature 40 DC \n Material Grey cast iron \n Curve code: 460",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "261", "module_alt": 1, "module_description": "" },
+            { "module_number": "262", "module_alt": 1, "module_description": "" },
+            { "module_number": "263", "module_alt": 1, "module_description": "" },
+            { "module_number": "264", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "310",
+          "module_alt": 1,
+          "module_description": "Bearing holder",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "341", "module_alt": 1, "module_description": "" },
+            { "module_number": "352", "module_alt": 1, "module_description": "" },
+            { "module_number": "361", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "414",
+          "module_alt": 1,
+          "module_description": "Cable entry \n No of cable entries: 1 \n (18)-20mm",
+          "classification_status": "non_standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "592",
+          "module_alt": 1,
+          "module_description": "Power cable x 1 \n SUBCAB S3x2,5+3x2,5/3+S(4x0,5) \n 18 - 20mm \n L= 10m",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "515", "module_alt": 1, "module_description": "" },
+            { "module_number": "593", "module_alt": 1, "module_description": "" },
+            { "module_number": "594", "module_alt": 1, "module_description": "" },
+            { "module_number": "595", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "697",
+          "module_alt": 1,
+          "module_description": "Sliding bracket \n Installation \n P \n LT \n MT \n SH",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "640", "module_alt": 1, "module_description": "" },
+            { "module_number": "641", "module_alt": 1, "module_description": "" },
+            { "module_number": "643", "module_alt": 1, "module_description": "" },
+            { "module_number": "673", "module_alt": 1, "module_description": "" },
+            { "module_number": "674", "module_alt": 1, "module_description": "" },
+            { "module_number": "675", "module_alt": 1, "module_description": "" },
+            { "module_number": "676", "module_alt": 1, "module_description": "" },
+            { "module_number": "677", "module_alt": 1, "module_description": "" },
+            { "module_number": "678", "module_alt": 1, "module_description": "" },
+            { "module_number": "679", "module_alt": 1, "module_description": "" },
+            { "module_number": "685", "module_alt": 1, "module_description": "" },
+            { "module_number": "698", "module_alt": 1, "module_description": "" },
+            { "module_number": "699", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "700",
+          "module_alt": 1,
+          "module_description": "Parts for \n Maximum temperature 40 DC \n Terminal board 6 mm2 \n Main O-ring material: NBR",
+          "classification_status": "non_standard",
+          "module_alternatives": []
+        },
+        {
+          "module_number": "806",
+          "module_alt": 1,
+          "module_description": "Mechanical Seals \n Material inner seal: \n Cemented carbide (WCCR) - Aluminium oxide (Al2 O3) \n Material outer seal: \n Cemented carbide (WCCR) - Cemented carbide (WCCR)",
+          "classification_status": "non_standard",
+          "module_alternatives": [
+            { "module_number": "805", "module_alt": 1, "module_description": "" },
+            { "module_number": "810", "module_alt": 1, "module_description": "" },
+            { "module_number": "840", "module_alt": 1, "module_description": "" }
+          ]
+        },
+        {
+          "module_number": "999",
+          "module_alt": 1,
+          "module_description": "",
+          "classification_status": "non_standard",
+          "module_alternatives": []
+        }
+      ]
+    }
+  }
+]

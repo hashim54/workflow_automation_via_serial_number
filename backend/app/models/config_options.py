@@ -213,6 +213,63 @@ class APIOptions(BaseModel):
     }
 
 
+class MockCosmosProviderOptions(BaseModel):
+    """Cosmos DB provider settings for the mock API subsystem.
+
+    These are only relevant when ``MockOptions.db_provider == 'cosmosdb'``.
+    """
+
+    endpoint: Optional[str] = Field(
+        default=None, description="Dedicated Cosmos DB endpoint for mock data (falls back to main COSMOS_ENDPOINT)"
+    )
+    connection_string: Optional[str] = Field(
+        default=None, description="Dedicated connection string for mock data (falls back to main COSMOS_CONNECTION_STRING)"
+    )
+    database_name: str = Field(default="mock-db", min_length=1, description="Mock database name")
+    fsg_container_name: str = Field(
+        default="fsg-products", min_length=1, description="FSG mock data container name"
+    )
+    phoenix_container_name: str = Field(
+        default="phoenix-products", min_length=1, description="Phoenix mock data container name"
+    )
+
+    @field_validator("endpoint")
+    @classmethod
+    def validate_endpoint(cls, v: Optional[str]) -> Optional[str]:
+        """Validate Cosmos DB endpoint format if provided."""
+        if v and not v.startswith("https://"):
+            raise ValueError("Mock Cosmos DB endpoint must start with https://")
+        return v
+
+    model_config = {
+        "str_strip_whitespace": True,
+    }
+
+
+class MockOptions(BaseModel):
+    """Provider-agnostic configuration for the mock API subsystem.
+
+    Controls whether mock routes are registered and which storage backend
+    is used for mock data.  Provider-specific settings live in dedicated
+    options classes (e.g. ``MockCosmosProviderOptions``).
+    """
+
+    enabled: bool = Field(default=False, description="Enable mock API subsystem")
+    db_provider: str = Field(
+        default="cosmosdb", description="Storage backend for mock data (currently only 'cosmosdb')"
+    )
+    load_initial_data: bool = Field(
+        default=False, description="Load initial mock data from seed files on startup"
+    )
+    cosmos: MockCosmosProviderOptions = Field(
+        default_factory=MockCosmosProviderOptions, description="Cosmos DB provider settings"
+    )
+
+    model_config = {
+        "str_strip_whitespace": True,
+    }
+
+
 class KeyVaultOptions(BaseModel):
     """Configuration for Azure Key Vault for secrets management.
 
