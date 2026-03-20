@@ -14,6 +14,7 @@ Routes:
     - /api/v1/workflows: Workflow execution and status endpoints
     - /health: Health check and readiness probes
     - /config: Configuration validation and status
+    - /mock-api: Mock FSG and Phoenix endpoints
 
 API Documentation:
     - Swagger UI: http://localhost:8000/docs
@@ -144,6 +145,45 @@ async def _ensure_cosmos_resources() -> None:
         # raise
 
 
+async def _ensure_mock_cosmos_resources() -> None:
+    """Create mock Cosmos DB database/containers and optionally seed data.
+
+    Called during FastAPI app startup. Skipped when mock is disabled or
+    Cosmos DB is not configured.
+    """
+    settings = container.settings()
+    mock_options = settings.mock_options
+
+    if not mock_options.enabled:
+        logger.info("[MockCosmos] Mock API disabled (MOCK_ENABLED != true)")
+        return
+
+    # Determine effective Cosmos connection (mock-specific or main)
+    cosmos_options = settings.cosmos_db_options
+    has_connection = (
+        mock_options.cosmos.connection_string
+        or mock_options.cosmos.endpoint
+        or cosmos_options.connection_string
+        or cosmos_options.endpoint
+    )
+    if not has_connection:
+        logger.warning("[MockCosmos] No Cosmos DB connection configured - skipping mock data setup")
+        return
+
+    try:
+        mock_cosmos = container.mock_cosmos()
+        await mock_cosmos.ensure_containers()
+
+        if mock_options.load_initial_data:
+            logger.info("[MockCosmos] Loading initial mock data...")
+            await mock_cosmos.load_initial_data()
+        else:
+            logger.info("[MockCosmos] Initial data loading disabled (MOCK_LOAD_INITIAL_DATA != 1)")
+
+    except Exception as e:
+        logger.error(f"Failed to provision mock Cosmos DB resources: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle (startup and shutdown).
@@ -174,9 +214,15 @@ async def lifespan(app: FastAPI):
         logger.info(
             f"  MCP Phoenix: {'Configured' if settings.mcp_client.phoenix_endpoint else 'Not configured'}"
         )
+        logger.info(
+            f"  Mock API: {'Enabled' if settings.mock_options.enabled else 'Disabled'}"
+        )
 
         # Provision Cosmos DB resources if they don't exist
         await _ensure_cosmos_resources()
+
+        # Provision mock Cosmos DB resources and optionally load seed data
+        await _ensure_mock_cosmos_resources()
 
         # Configure Foundry Project telemetry (must be done in async context)
         await _configure_foundry_telemetry()
@@ -223,6 +269,13 @@ def create_app() -> FastAPI:
     app.include_router(workflow.router, prefix="/api/v1/workflows", tags=["workflows"])
     app.include_router(health.router, prefix="/health", tags=["health"])
     app.include_router(config.router, prefix="/config", tags=["config"])
+
+    # Conditionally include mock API routes when mock is enabled
+    mock_enabled = container.settings().mock_options.enabled
+    if mock_enabled:
+        from app.api.routes import mock_api
+
+        app.include_router(mock_api.router, prefix="/mock-api", tags=["mock"])
 
     return app
 

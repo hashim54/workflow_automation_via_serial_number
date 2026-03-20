@@ -7,6 +7,7 @@ from app.core.logger import get_logger
 from app.services.blob_storage_service import BlobStorageService
 from app.services.cosmos_db_service import CosmosDBService
 from app.services.foundry_service import FoundryService
+from app.services.mock_cosmos_db_service import MockCosmosDBService
 from app.services.workflow_service import WorkflowService
 from app.mcp_clients.fsg_client import FsgClient
 from app.mcp_clients.phoenix_client import PhoenixClient
@@ -20,6 +21,7 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "app.api.routes.workflow",
             "app.api.routes.health",
+            "app.api.routes.mock_api",
         ]
     )
 
@@ -40,6 +42,9 @@ class Container(containers.DeclarativeContainer):
     # MCP Clients
     fsg_client = providers.Factory(FsgClient, settings=settings)
     phoenix_client = providers.Factory(PhoenixClient, settings=settings)
+
+    # Mock Cosmos DB service for FSG/Phoenix mock APIs
+    mock_cosmos = providers.Singleton(MockCosmosDBService, settings=settings, logger=logger)
 
     # Workflow (may not be fully functional until services are configured)
     serial_number_workflow = providers.Factory(

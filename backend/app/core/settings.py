@@ -15,6 +15,8 @@ Settings are organized into nested sub-settings classes with env-var prefixes:
 - MCP_*                 - MCP client endpoint settings
 - WORKFLOW_*            - Workflow execution settings
 - API_*                 - API server settings
+- MOCK_*                - Mock API subsystem settings
+- MOCK_COSMOS_*         - Mock Cosmos DB provider settings
 """
 
 from typing import Optional
@@ -28,6 +30,8 @@ from app.models.config_options import (
     FoundryOptions,
     KeyVaultOptions,
     MCPClientOptions,
+    MockCosmosProviderOptions,
+    MockOptions,
     WorkflowOptions,
 )
 from pydantic import Field
@@ -124,6 +128,32 @@ class APISettings(AppConfigAwareSettings):
     enable_docs: bool = Field(default=True, description="Enable API documentation")
 
 
+class MockSettings(AppConfigAwareSettings):
+    """Provider-agnostic mock API settings."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MOCK_", env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+
+    enabled: bool = Field(default=False, description="Enable mock API subsystem")
+    db_provider: str = Field(default="cosmosdb", description="Storage backend for mock data")
+    load_initial_data: bool = Field(default=False, description="Load initial mock data from seed files on startup")
+
+
+class MockCosmosSettings(AppConfigAwareSettings):
+    """Cosmos DB provider settings for mock API data."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MOCK_COSMOS_", env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+
+    endpoint: Optional[str] = Field(default=None, description="Dedicated Cosmos DB endpoint for mock data (falls back to COSMOS_ENDPOINT)")
+    connection_string: Optional[str] = Field(default=None, description="Dedicated connection string for mock data (falls back to COSMOS_CONNECTION_STRING)")
+    database_name: str = Field(default="mock-db", description="Mock database name")
+    fsg_container_name: str = Field(default="fsg-products", description="FSG mock data container name")
+    phoenix_container_name: str = Field(default="phoenix-products", description="Phoenix mock data container name")
+
+
 class KeyVaultSettings(AppConfigAwareSettings):
     """Azure Key Vault settings for secrets management."""
 
@@ -172,6 +202,8 @@ class Settings(AppConfigAwareSettings):
     workflow: WorkflowSettings = Field(default_factory=lambda: WorkflowSettings())  # type: ignore[call-arg]
     api: APISettings = Field(default_factory=lambda: APISettings())  # type: ignore[call-arg]
     key_vault: KeyVaultSettings = Field(default_factory=lambda: KeyVaultSettings())  # type: ignore[call-arg]
+    mock: MockSettings = Field(default_factory=lambda: MockSettings())  # type: ignore[call-arg]
+    mock_cosmos: MockCosmosSettings = Field(default_factory=lambda: MockCosmosSettings())  # type: ignore[call-arg]
 
     # ──────────────────────────────────────────────────────────────────
     # Typed Options Properties
@@ -249,6 +281,22 @@ class Settings(AppConfigAwareSettings):
         return KeyVaultOptions(
             url=self.key_vault.url,
             use_key_vault=self.key_vault.use_key_vault,
+        )
+
+    @property
+    def mock_options(self) -> MockOptions:
+        """Create MockOptions from nested settings."""
+        return MockOptions(
+            enabled=self.mock.enabled,
+            db_provider=self.mock.db_provider,
+            load_initial_data=self.mock.load_initial_data,
+            cosmos=MockCosmosProviderOptions(
+                endpoint=self.mock_cosmos.endpoint,
+                connection_string=self.mock_cosmos.connection_string,
+                database_name=self.mock_cosmos.database_name,
+                fsg_container_name=self.mock_cosmos.fsg_container_name,
+                phoenix_container_name=self.mock_cosmos.phoenix_container_name,
+            ),
         )
 
     # ──────────────────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ from app.models.config_options import (
     CosmosDBOptions,
     FoundryOptions,
     MCPClientOptions,
+    MockCosmosProviderOptions,
+    MockOptions,
     WorkflowOptions,
 )
 from pydantic import ValidationError
@@ -222,3 +224,80 @@ class TestAPIOptions:
         assert config.port == 9000
         assert config.enable_cors is False
         assert config.enable_docs is False
+
+
+@pytest.mark.unit
+class TestMockOptions:
+    """Test provider-agnostic mock configuration validation."""
+
+    def test_defaults(self):
+        """Test default values — disabled, cosmosdb provider, no initial data."""
+        config = MockOptions()
+        assert config.enabled is False
+        assert config.db_provider == "cosmosdb"
+        assert config.load_initial_data is False
+        assert config.cosmos.endpoint is None
+        assert config.cosmos.connection_string is None
+        assert config.cosmos.database_name == "mock-db"
+        assert config.cosmos.fsg_container_name == "fsg-products"
+        assert config.cosmos.phoenix_container_name == "phoenix-products"
+
+    def test_enabled_flag(self):
+        """Test that enabled flag is set correctly."""
+        config = MockOptions(enabled=True)
+        assert config.enabled is True
+
+    def test_load_initial_data_flag(self):
+        """Test load initial data flag."""
+        config = MockOptions(load_initial_data=True)
+        assert config.load_initial_data is True
+
+    def test_custom_db_provider(self):
+        """Test setting a custom db_provider value."""
+        config = MockOptions(db_provider="memory")
+        assert config.db_provider == "memory"
+
+
+@pytest.mark.unit
+class TestMockCosmosProviderOptions:
+    """Test Cosmos DB provider options for mock API."""
+
+    def test_defaults(self):
+        """Test default values."""
+        config = MockCosmosProviderOptions()
+        assert config.endpoint is None
+        assert config.connection_string is None
+        assert config.database_name == "mock-db"
+        assert config.fsg_container_name == "fsg-products"
+        assert config.phoenix_container_name == "phoenix-products"
+
+    def test_valid_endpoint(self):
+        """Test valid mock Cosmos DB endpoint."""
+        config = MockCosmosProviderOptions(
+            endpoint="https://mock-cosmos.documents.azure.com:443/"
+        )
+        assert config.endpoint == "https://mock-cosmos.documents.azure.com:443/"
+
+    def test_invalid_endpoint_scheme(self):
+        """Test that non-https endpoint raises validation error."""
+        with pytest.raises(ValidationError, match="must start with https://"):
+            MockCosmosProviderOptions(endpoint="http://mock-cosmos.documents.azure.com:443/")
+
+    def test_connection_string_mode(self):
+        """Test using connection string instead of endpoint."""
+        config = MockCosmosProviderOptions(
+            connection_string="AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=test==;"
+        )
+        assert config.connection_string is not None
+        assert config.endpoint is None
+
+    def test_custom_container_names(self):
+        """Test custom container names."""
+        config = MockCosmosProviderOptions(
+            fsg_container_name="custom-fsg",
+            phoenix_container_name="custom-phoenix",
+            database_name="custom-mock-db",
+        )
+        assert config.fsg_container_name == "custom-fsg"
+        assert config.phoenix_container_name == "custom-phoenix"
+        assert config.database_name == "custom-mock-db"

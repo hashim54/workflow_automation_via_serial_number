@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 
 # Load test environment before importing app
 os.environ["ENV_FILE"] = ".env.test"
+# Ensure mock API is disabled in the default test client
+os.environ.setdefault("MOCK_ENABLED", "false")
 
 from app.api.main import app
 

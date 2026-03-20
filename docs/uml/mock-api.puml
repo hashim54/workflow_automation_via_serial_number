@@ -1,0 +1,249 @@
+@startuml mock-api-overview
+!theme plain
+title Mock API Subsystem — Component Overview
+
+skinparam component {
+    BackgroundColor<<mock>> #E8F5E9
+    BackgroundColor<<config>> #FFF3E0
+    BackgroundColor<<infra>> #E3F2FD
+}
+
+package "Environment Variables" <<config>> {
+    [MOCK_ENABLED] as ME
+    [MOCK_DB_PROVIDER] as MDP
+    [MOCK_LOAD_INITIAL_DATA] as MLI
+    [MOCK_COSMOS_*] as MC
+}
+
+package "Settings Layer" <<config>> {
+    [MockSettings\n(prefix: MOCK_)] as MS
+    [MockCosmosSettings\n(prefix: MOCK_COSMOS_)] as MCS
+    [Settings.mock_options] as SMO
+}
+
+package "Models" <<config>> {
+    [MockOptions] as MO
+    [MockCosmosProviderOptions] as MCPO
+}
+
+package "Mock API" <<mock>> {
+    [mock_api.py\n/mock-api/fsg/products/{sn}\n/mock-api/phoenix/plm/serialnumber/{pn}] as ROUTES
+}
+
+package "Service Layer" <<mock>> {
+    [MockCosmosDBService] as SVC
+}
+
+package "Infrastructure" <<infra>> {
+    database "Azure Cosmos DB" as COSMOS {
+        [mock-db] as DB
+        [fsg-products] as FSG
+        [phoenix-products] as PHX
+    }
+    folder "backend/mock-data/" as SEED {
+        file "fsg.json" as FSGJ
+        file "phoenix.json" as PHXJ
+    }
+}
+
+package "DI Container" {
+    [Container.mock_cosmos\n(Singleton)] as DI
+}
+
+ME --> MS
+MDP --> MS
+MLI --> MS
+MC --> MCS
+MS --> SMO
+MCS --> SMO
+SMO --> MO
+SMO --> MCPO
+
+MO ..> ROUTES : enabled → register routes
+MO ..> SVC : load_initial_data
+MCPO --> SVC : endpoint\nconnection_string\ndatabase/containers
+
+DI --> SVC
+ROUTES --> DI : @inject
+
+SVC --> DB
+SVC --> FSG
+SVC --> PHX
+SEED ..> SVC : seed data
+
+@enduml
+
+
+@startuml mock-api-startup
+!theme plain
+title Mock API — Startup Sequence
+
+participant "FastAPI\nlifespan()" as APP
+participant "create_app()" as CA
+participant "Settings" as CFG
+participant "Container" as DI
+participant "MockCosmosDBService" as SVC
+database "Cosmos DB" as DB
+collections "mock-data/*.json" as SEED
+
+== Application Creation ==
+
+APP -> CA : create_app()
+CA -> CFG : settings.mock_options.enabled
+alt MOCK_ENABLED = true
+    CA -> CA : include_router(mock_api.router,\nprefix="/mock-api")
+    note right: Routes registered
+else MOCK_ENABLED = false
+    note right: No mock routes\nregistered (404)
+end
+
+== Lifespan Startup ==
+
+APP -> APP : _ensure_mock_cosmos_resources()
+APP -> CFG : mock_options
+alt mock_options.enabled = false
+    APP -> APP : log "Mock API disabled"
+    note right: Skip all mock setup
+else mock_options.enabled = true
+    APP -> CFG : check Cosmos connection\n(mock or main fallback)
+    alt No connection configured
+        APP -> APP : warn & skip
+    else Connection available
+        APP -> DI : container.mock_cosmos()
+        DI -> SVC : get or create Singleton
+        SVC -> SVC : _ensure_client()\npriority: MOCK_COSMOS_* → COSMOS_*
+        SVC -> DB : create_database_if_not_exists("mock-db")
+        SVC -> DB : create_container_if_not_exists("fsg-products")
+        SVC -> DB : create_container_if_not_exists("phoenix-products")
+        alt MOCK_LOAD_INITIAL_DATA = true
+            SVC -> SEED : read fsg.json
+            SVC -> DB : upsert_item() × N
+            SVC -> SEED : read phoenix.json
+            SVC -> DB : upsert_item() × N
+            note right: Idempotent upsert
+        else MOCK_LOAD_INITIAL_DATA = false
+            note right: Skip seed loading
+        end
+    end
+end
+
+@enduml
+
+
+@startuml mock-api-request
+!theme plain
+title Mock API — Request Flow
+
+actor Client as C
+participant "FastAPI\n/mock-api" as API
+participant "mock_api.py\nrouter" as R
+participant "DI Container\n@inject" as DI
+participant "MockCosmosDBService" as SVC
+database "Cosmos DB\nmock-db" as DB
+
+== GET /mock-api/fsg/products/{serial_number} ==
+
+C -> API : GET /mock-api/fsg/products/30691602340734
+API -> R : route dispatch
+R -> DI : Provide[Container.mock_cosmos]
+DI -> SVC : singleton instance
+R -> SVC : get_fsg_product("30691602340734")
+SVC -> SVC : _get_fsg_container()
+SVC -> DB : read_item(\n  item="fsg_30691602340734",\n  partition_key="30691602340734"\n)
+
+alt Document found
+    DB --> SVC : document
+    SVC --> R : dict
+    R --> API : 200 OK + payload field
+    API --> C : {"warranty": "active", ...}
+else Document not found (404)
+    DB --> SVC : CosmosHttpResponseError(404)
+    SVC --> R : None
+    R --> API : HTTPException(404)
+    API --> C : {"detail": "FSG product not found ..."}
+end
+
+== GET /mock-api/phoenix/plm/serialnumber/{product_number} ==
+
+C -> API : GET /mock-api/phoenix/plm/serialnumber/30691600035
+API -> R : route dispatch
+R -> SVC : get_phoenix_product("30691600035")
+SVC -> DB : read_item(\n  item="phoenix_30691600035",\n  partition_key="30691600035"\n)
+
+alt Document found
+    DB --> SVC : document
+    SVC --> R : dict
+    R --> API : 200 OK + payload field
+    API --> C : {"model": "XYZ", ...}
+else Document not found (404)
+    DB --> SVC : CosmosHttpResponseError(404)
+    SVC --> R : None
+    R --> API : HTTPException(404)
+    API --> C : {"detail": "Phoenix product not found ..."}
+end
+
+@enduml
+
+
+@startuml mock-api-config
+!theme plain
+title Mock API — Configuration Model
+
+class MockOptions <<BaseModel>> {
+    + enabled : bool = false
+    + db_provider : str = "cosmosdb"
+    + load_initial_data : bool = false
+    + cosmos : MockCosmosProviderOptions
+}
+
+class MockCosmosProviderOptions <<BaseModel>> {
+    + endpoint : Optional[str]
+    + connection_string : Optional[str]
+    + database_name : str = "mock-db"
+    + fsg_container_name : str = "fsg-products"
+    + phoenix_container_name : str = "phoenix-products"
+}
+
+class MockSettings <<pydantic-settings>> {
+    .. env_prefix = "MOCK_" ..
+    + enabled : bool
+    + db_provider : str
+    + load_initial_data : bool
+}
+
+class MockCosmosSettings <<pydantic-settings>> {
+    .. env_prefix = "MOCK_COSMOS_" ..
+    + endpoint : Optional[str]
+    + connection_string : Optional[str]
+    + database_name : str
+    + fsg_container_name : str
+    + phoenix_container_name : str
+}
+
+class Settings {
+    + mock : MockSettings
+    + mock_cosmos : MockCosmosSettings
+    --
+    + mock_options : MockOptions
+}
+
+MockOptions *-- MockCosmosProviderOptions : cosmos
+Settings *-- MockSettings : mock
+Settings *-- MockCosmosSettings : mock_cosmos
+Settings ..> MockOptions : «property» mock_options
+MockSettings ..> MockOptions : maps to
+MockCosmosSettings ..> MockCosmosProviderOptions : maps to
+
+note bottom of MockOptions
+  Provider-agnostic.
+  Controls feature flag and
+  which backend to use.
+end note
+
+note bottom of MockCosmosProviderOptions
+  Cosmos DB-specific.
+  Falls back to main COSMOS_*
+  settings when empty.
+end note
+
+@enduml

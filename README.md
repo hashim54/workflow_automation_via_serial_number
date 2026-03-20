@@ -118,6 +118,56 @@ Centralizes all settings under a key filter (e.g. `workflow-automation:*`). Supp
 |---|---|
 | `App Configuration Data Reader` | App Configuration store |
 
+## Mock APIs (FSG & Phoenix)
+
+Mock API endpoints allow local development and testing without connecting to the real FSG and Phoenix services. Mock data is stored in a configurable backend (currently Azure Cosmos DB) and seeded from JSON files.
+
+### Enabling mock mode
+
+Set `MOCK_ENABLED=true` in `.env`. When disabled (default) no mock routes are registered and no mock resources are provisioned.
+
+### Environment variables
+
+**General (provider-agnostic):**
+
+| Variable | Default | Description |
+|---|---|---|
+| `MOCK_ENABLED` | `false` | Enable or disable the entire mock API subsystem |
+| `MOCK_DB_PROVIDER` | `cosmosdb` | Storage backend for mock data (currently only `cosmosdb`) |
+| `MOCK_LOAD_INITIAL_DATA` | `0` | Set to `1` to upsert seed data from `backend/mock-data/` on every startup (idempotent) |
+
+**Cosmos DB provider (`MOCK_COSMOS_*`):**
+
+| Variable | Default | Description |
+|---|---|---|
+| `MOCK_COSMOS_ENDPOINT` | _(empty)_ | Optional dedicated Cosmos DB endpoint for mock data. Falls back to `COSMOS_ENDPOINT` when not set |
+| `MOCK_COSMOS_CONNECTION_STRING` | _(empty)_ | Optional dedicated connection string. Falls back to `COSMOS_CONNECTION_STRING` when not set |
+| `MOCK_COSMOS_DATABASE_NAME` | `mock-db` | Database name for mock data |
+| `MOCK_COSMOS_FSG_CONTAINER_NAME` | `fsg-products` | Container for FSG mock documents (PK: `/serial_number`) |
+| `MOCK_COSMOS_PHOENIX_CONTAINER_NAME` | `phoenix-products` | Container for Phoenix mock documents (PK: `/lookup_product_input_product_number`) |
+
+### Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/mock-api/fsg/products/{serial_number}` | Returns FSG product payload for the given serial number |
+| `GET` | `/mock-api/phoenix/plm/serialnumber/{product_number}` | Returns Phoenix product payload for the given product number |
+
+Both return `200` with the document's `payload` field, or `404` when not found.
+
+### Seed data
+
+Seed files live in `backend/mock-data/`:
+
+- `fsg.json` — FSG documents keyed by `serial_number`
+- `phoenix.json` — Phoenix documents keyed by `lookup_product_input_product_number`
+
+The loader uses `upsert_item` so running it multiple times is safe — existing documents are overwritten with the same content.
+
+### RBAC
+
+The same `Cosmos DB Built-in Data Contributor` role is required on the Cosmos DB account used for mock data (whether it's the main account or a separate one via `MOCK_COSMOS_ENDPOINT`).
+
 ### Azure Key Vault _(optional)_
 
 Used to store secrets referenced from Azure App Configuration. The `azure-appconfiguration-provider` SDK resolves Key Vault reference values automatically at startup — no additional SDK calls are required.

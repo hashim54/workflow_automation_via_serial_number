@@ -1,0 +1,86 @@
+[
+  {
+    "id": "fsg_30691602340734",
+    "serial_number": "30691602340734",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 1,
+      "image_url": "Mock data\\Images\\1.jpg",
+      "api_input": "GET API_BASE_URL/PLM/SerialNumber/30691602340734"
+    },
+    "payload": {
+      "serial_number": "30691602340734",
+      "product_number": "30691600035",
+      "product_code": "3069.160",
+      "sales_code": "3069",
+      "version_code": "160",
+      "hydraulic_end_type": "N",
+      "installation_type": "X",
+      "pressure_characteristic": "SH",
+      "frequency": "50"
+    }
+  },
+  {
+    "id": "fsg_30691802250846",
+    "serial_number": "30691802250846",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 2,
+      "image_url": "Mock data\\Images\\2.jpg",
+      "api_input": "GET API_BASE_URL/PLM/SerialNumber/30691802250846"
+    },
+    "payload": {
+      "serial_number": "30691802250846",
+      "product_number": "30691800328",
+      "product_code": "3069.180",
+      "sales_code": "3069",
+      "version_code": "180",
+      "hydraulic_end_type": "D",
+      "installation_type": "F",
+      "pressure_characteristic": "MT",
+      "frequency": "50"
+    }
+  },
+  {
+    "id": "fsg_30851601340441",
+    "serial_number": "30851601340441",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 3,
+      "image_url": "Mock data\\Images\\3.jpg",
+      "api_input": "GET API_BASE_URL/PLM/SerialNumber/30851601340441"
+    },
+    "payload": {
+      "serial_number": "30851601340441",
+      "product_number": "30851600007",
+      "product_code": "3085.160",
+      "sales_code": "3085",
+      "version_code": "160",
+      "hydraulic_end_type": "N",
+      "installation_type": "P",
+      "pressure_characteristic": "MT",
+      "frequency": "50"
+    }
+  },
+  {
+    "id": "fsg_31029001710031",
+    "serial_number": "31029001710031",
+    "source": {
+      "dataset": "pls_80_20_example_data.xlsx",
+      "row": 4,
+      "image_url": "Mock data\\Images\\4.jpg",
+      "api_input": "GET API_BASE_URL/PLM/SerialNumber/31029001710031"
+    },
+    "payload": {
+      "serial_number": "31029001710031",
+      "product_number": "31029000242",
+      "product_code": "3102.900",
+      "sales_code": "3102",
+      "version_code": "900",
+      "hydraulic_end_type": "N",
+      "installation_type": "P",
+      "pressure_characteristic": "MT",
+      "frequency": "50"
+    }
+  }
+]
